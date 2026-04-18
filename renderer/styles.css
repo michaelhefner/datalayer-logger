@@ -419,9 +419,11 @@ body.no-events #events-list   { display: none; }
   padding: 7px 10px;
   border-bottom: 1px solid #272727;
   transition: background 0.1s;
+  cursor: pointer;
 }
-.el-item:hover  { background: var(--bg-hover); }
-.el-item.hidden { display: none; }
+.el-item:hover         { background: var(--bg-hover); }
+.el-item.hidden        { display: none; }
+.el-item.el-active     { background: #1a2d3e; border-left: 2px solid var(--accent); padding-left: 8px; }
 
 .el-tag {
   flex-shrink: 0;

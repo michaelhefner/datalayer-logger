@@ -238,6 +238,15 @@ function renderElements() {
       });
     });
 
+    // Click the row to highlight the element in the browser
+    item.title = 'Click to highlight element on page';
+    item.addEventListener('click', (e) => {
+      if (e.target === copyBtn) return;
+      window.electronAPI.highlightElement(el.selector);
+      document.querySelectorAll('.el-item.el-active').forEach(r => r.classList.remove('el-active'));
+      item.classList.add('el-active');
+    });
+
     elementsList.appendChild(item);
   });
 
