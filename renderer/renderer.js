@@ -169,6 +169,37 @@ clearBtn.addEventListener('click', () => {
 
 filterInput.addEventListener('input', applyFilter);
 
+// ── Sidebar resize handle ───────────────────────────────────────────────────
+
+const resizeHandle = document.getElementById('sidebar-resize-handle');
+const sidebar      = document.getElementById('sidebar');
+const MIN_W = 280;
+const MAX_W = window.innerWidth - 300;
+
+resizeHandle.addEventListener('mousedown', (startEvt) => {
+  startEvt.preventDefault();
+  const startX     = startEvt.clientX;
+  const startWidth = sidebar.getBoundingClientRect().width;
+
+  document.body.classList.add('resizing');
+
+  function onMouseMove(e) {
+    const delta    = startX - e.clientX;          // dragging left = wider
+    const newWidth = Math.min(MAX_W, Math.max(MIN_W, startWidth + delta));
+    document.documentElement.style.setProperty('--sidebar-w', `${newWidth}px`);
+    window.electronAPI.resizeSidebar(newWidth);
+  }
+
+  function onMouseUp() {
+    document.body.classList.remove('resizing');
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup',   onMouseUp);
+  }
+
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup',   onMouseUp);
+});
+
 // ── Tab switching ─────────────────────────────────────────────────────────
 
 document.querySelectorAll('.tab-btn').forEach((btn) => {
@@ -220,12 +251,31 @@ function renderElements() {
     item.className = 'el-item' + (el.visible ? '' : ' el-invisible');
 
     item.innerHTML = `
-      <span class="el-tag ${tagClass(el.tag)}">&lt;${escapeHtml(el.tag)}&gt;</span>
-      <div class="el-body">
-        <div class="el-text">${escapeHtml(el.text)}</div>
-        <div class="el-meta">${escapeHtml(meta)}</div>
+      <div class="el-header">
+        <span class="el-tag ${tagClass(el.tag)}">&lt;${escapeHtml(el.tag)}&gt;</span>
+        <div class="el-body">
+          <div class="el-text">${escapeHtml(el.text)}</div>
+          <div class="el-meta">${escapeHtml(meta)}</div>
+        </div>
+        <div class="el-right">
+          ${el.listeners && el.listeners.length
+            ? `<span class="el-listener-badge" title="${el.listeners.length} event listener${el.listeners.length !== 1 ? 's' : ''}">${el.listeners.length} &#x1F4E1;</span>`
+            : ''}
+          <button class="el-copy-btn" title="Copy CSS selector">Copy</button>
+        </div>
       </div>
-      <button class="el-copy-btn" title="Copy CSS selector">Copy</button>
+      ${el.listeners && el.listeners.length ? `
+      <div class="el-listeners" style="display:none">
+        ${el.listeners.map(l => `
+          <div class="el-listener-row">
+            <span class="el-event-type">${escapeHtml(l.type)}</span>
+            <span class="el-fn-name">${escapeHtml(l.fnName)}</span>
+            ${l.capture ? '<span class="el-flag">capture</span>' : ''}
+            ${l.once    ? '<span class="el-flag">once</span>'    : ''}
+            ${l.passive ? '<span class="el-flag">passive</span>' : ''}
+            ${l.fnPreview ? `<pre class="el-fn-preview">${escapeHtml(l.fnPreview)}</pre>` : ''}
+          </div>`).join('')}
+      </div>` : ''}
     `;
 
     const copyBtn = item.querySelector('.el-copy-btn');
@@ -238,10 +288,23 @@ function renderElements() {
       });
     });
 
+    // Toggle listener section when the badge is clicked
+    const listenerBadge = item.querySelector('.el-listener-badge');
+    const listenersDiv  = item.querySelector('.el-listeners');
+    if (listenerBadge && listenersDiv) {
+      listenerBadge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = listenersDiv.style.display !== 'none';
+        listenersDiv.style.display = open ? 'none' : 'block';
+        listenerBadge.classList.toggle('active', !open);
+      });
+    }
+
     // Click the row to highlight the element in the browser
     item.title = 'Click to highlight element on page';
     item.addEventListener('click', (e) => {
       if (e.target === copyBtn) return;
+      if (e.target === listenerBadge || (listenerBadge && listenerBadge.contains(e.target))) return;
       window.electronAPI.highlightElement(el.selector);
       document.querySelectorAll('.el-item.el-active').forEach(r => r.classList.remove('el-active'));
       item.classList.add('el-active');

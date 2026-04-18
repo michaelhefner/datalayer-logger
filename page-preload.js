@@ -75,3 +75,42 @@ const { ipcRenderer } = require('electron');
     enumerable: true,
   });
 })();
+
+// ---------------------------------------------------------------------------
+// addEventListener interceptor
+// Patches EventTarget.prototype.addEventListener BEFORE page scripts run,
+// recording every listener registration keyed by target element.
+// Exposes window.__dlGetListeners__(el) so scanPageForClickables can read them.
+// ---------------------------------------------------------------------------
+;(function () {
+  const listenerMap = new WeakMap();
+  const _add = EventTarget.prototype.addEventListener;
+
+  EventTarget.prototype.addEventListener = function (type, listener, options) {
+    if (this instanceof EventTarget) {
+      const capture = typeof options === 'boolean' ? options
+        : !!(options && options.capture);
+      const once    = !!(options && typeof options === 'object' && options.once);
+      const passive = !!(options && typeof options === 'object' && options.passive);
+
+      let fnName    = '(anonymous)';
+      let fnPreview = '';
+      if (typeof listener === 'function') {
+        fnName    = listener.name || '(anonymous)';
+        fnPreview = listener.toString().replace(/\s+/g, ' ').trim().slice(0, 160);
+        if (fnPreview.length === 160) fnPreview += '\u2026';
+      }
+
+      const entry = { type, capture, once, passive, fnName, fnPreview };
+      const existing = listenerMap.get(this);
+      if (existing) {
+        existing.push(entry);
+      } else {
+        listenerMap.set(this, [entry]);
+      }
+    }
+    return _add.call(this, type, listener, options);
+  };
+
+  window.__dlGetListeners__ = (el) => listenerMap.get(el) || [];
+})();

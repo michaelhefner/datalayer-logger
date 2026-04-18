@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Clickable element scanner
   scanClickableElements: () => ipcRenderer.invoke('scan-clickable-elements'),
   highlightElement: (selector) => ipcRenderer.invoke('highlight-element', selector),
+  resizeSidebar: (width) => ipcRenderer.send('resize-sidebar', width),
 
   // Subscriptions (one-way from main → renderer)
   onUrlChanged: (cb) =>

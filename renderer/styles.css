@@ -105,7 +105,28 @@ html, body {
   flex-direction: column;
   overflow: hidden;
   z-index: 9;
+  min-width: 280px;
+  max-width: 900px;
 }
+
+/* Resize handle */
+#sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  left: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 20;
+  background: transparent;
+  transition: background 0.15s;
+}
+#sidebar-resize-handle:hover,
+body.resizing #sidebar-resize-handle {
+  background: var(--accent);
+  opacity: 0.55;
+}
+body.resizing * { user-select: none; cursor: col-resize !important; }
 
 #session-path {
   padding: 5px 12px;
@@ -481,4 +502,97 @@ body.no-events #events-list   { display: none; }
 }
 .el-copy-btn:hover { background: var(--border); color: var(--text); }
 .el-copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+/* ── Element row restructure ── */
+.el-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.el-right {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+/* ── Listener badge (inline count) ── */
+.el-listener-badge {
+  display: inline-block;
+  background: #2a2040;
+  color: var(--purple);
+  border: 1px solid #4a3860;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+  white-space: nowrap;
+  user-select: none;
+}
+.el-listener-badge:hover  { background: #3a2d55; border-color: var(--purple); }
+.el-listener-badge.active { background: #3a2d55; border-color: var(--purple); color: #d7aaff; }
+
+/* ── Expanded listener section ── */
+.el-listeners {
+  margin: 0 10px 8px 10px;
+  border: 1px solid #3a2d55;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.el-listener-row {
+  padding: 5px 8px;
+  border-bottom: 1px solid #2a2040;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px;
+}
+.el-listener-row:last-child { border-bottom: none; }
+
+.el-event-type {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--purple);
+  font-family: 'Cascadia Code', 'Fira Code', monospace;
+  min-width: 80px;
+}
+
+.el-fn-name {
+  font-size: 11px;
+  color: var(--yellow);
+  font-family: 'Cascadia Code', 'Fira Code', monospace;
+}
+
+.el-flag {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #2a3a2a;
+  color: var(--green);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.el-fn-preview {
+  width: 100%;
+  font-size: 10px;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  color: var(--text-muted);
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 4px 6px;
+  margin-top: 3px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 80px;
+  overflow-y: auto;
+  line-height: 1.5;
+}
 

@@ -5,7 +5,9 @@ const path = require('path');
 const fs = require('fs');
 
 const TOOLBAR_HEIGHT = 52;
-const SIDEBAR_WIDTH = 380;
+const MIN_SIDEBAR   = 280;
+const MAX_SIDEBAR   = 900;
+let   SIDEBAR_WIDTH = 390;
 
 let mainWindow = null;
 let browserView = null;
@@ -148,6 +150,11 @@ ipcMain.on('reload', () => {
   if (browserView) browserView.webContents.reload();
 });
 
+ipcMain.on('resize-sidebar', (_e, width) => {
+  SIDEBAR_WIDTH = Math.min(MAX_SIDEBAR, Math.max(MIN_SIDEBAR, Math.round(width)));
+  updateBrowserViewBounds();
+});
+
 // ---------------------------------------------------------------------------
 // IPC — dataLayer events (sent from page-preload.js)
 // ---------------------------------------------------------------------------
@@ -264,6 +271,23 @@ function scanPageForClickables() {
     const classes = (el.className && typeof el.className === 'string')
       ? el.className.trim().split(/\s+/).filter(Boolean).slice(0, 6)
       : [];
+    // Collect registered event listeners recorded by the preload interceptor.
+    const listeners = typeof window.__dlGetListeners__ === 'function'
+      ? window.__dlGetListeners__(el)
+      : [];
+    // Also pick up inline on* attributes as synthetic listener entries.
+    const INLINE_EVENTS = ['onclick','onmousedown','onmouseup','onchange',
+      'onfocus','onblur','onkeydown','onkeyup','onkeypress','oninput','onsubmit'];
+    INLINE_EVENTS.forEach(attr => {
+      if (el.hasAttribute(attr)) {
+        listeners.push({
+          type: attr.replace(/^on/, ''),
+          capture: false, once: false, passive: false,
+          fnName: '(inline)',
+          fnPreview: (el.getAttribute(attr) || '').trim().slice(0, 160),
+        });
+      }
+    });
     return {
       tag: el.tagName.toLowerCase(),
       text: getText(el),
@@ -277,6 +301,7 @@ function scanPageForClickables() {
       placeholder: el.getAttribute('placeholder') || null,
       selector: getSelector(el),
       visible: isVisible(el),
+      listeners,
       rect: {
         top:    Math.round(rect.top  + window.scrollY),
         left:   Math.round(rect.left + window.scrollX),
