@@ -1,0 +1,297 @@
+/* ── Reset & base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #1e1e1e;
+  --bg-panel:    #252526;
+  --bg-bar:      #2d2d2d;
+  --bg-hover:    #2a2d2e;
+  --bg-code:     #1a1a1a;
+  --border:      #3c3c3c;
+  --text:        #d4d4d4;
+  --text-muted:  #6e6e6e;
+  --accent:      #007acc;
+  --accent-h:    #1a8ad4;
+  --green:       #4ec9b0;
+  --yellow:      #dcdcaa;
+  --orange:      #ce9178;
+  --blue:        #9cdcfe;
+  --purple:      #c586c0;
+  --badge-bg:    #264f78;
+
+  --toolbar-h:   52px;
+  --sidebar-w:   390px;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+}
+
+/* ── Toolbar ── */
+#toolbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--toolbar-h);
+  background: var(--bg-bar);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  gap: 8px;
+  z-index: 10;
+  -webkit-app-region: drag;
+}
+
+#toolbar > * { -webkit-app-region: no-drag; }
+
+#nav-buttons { display: flex; gap: 4px; }
+
+#nav-buttons button {
+  width: 30px; height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 17px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.1s;
+}
+#nav-buttons button:hover { background: var(--border); }
+
+#url-bar {
+  flex: 1;
+  height: 32px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--text);
+  padding: 0 14px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+#url-bar:focus { border-color: var(--accent); }
+
+#go-btn {
+  height: 30px;
+  padding: 0 14px;
+  background: var(--accent);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+#go-btn:hover { background: var(--accent-h); }
+
+/* ── Sidebar ── */
+#sidebar {
+  position: fixed;
+  top: var(--toolbar-h);
+  right: 0;
+  width: var(--sidebar-w);
+  bottom: 0;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 9;
+}
+
+#sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-bar);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+#sidebar-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+}
+
+#event-badge {
+  display: inline-block;
+  background: var(--badge-bg);
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  min-width: 22px;
+  text-align: center;
+}
+
+#sidebar-actions { display: flex; gap: 6px; }
+
+#sidebar-actions button {
+  padding: 3px 10px;
+  background: var(--border);
+  border: none;
+  border-radius: 3px;
+  color: var(--text);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+#sidebar-actions button:hover { background: #4e4e4e; }
+#export-btn { color: var(--green); }
+#clear-btn  { color: #f48771; }
+
+#session-path {
+  padding: 5px 12px;
+  font-size: 10px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+#filter-bar {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#filter-input {
+  width: 100%;
+  height: 26px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 0 8px;
+  font-size: 12px;
+  outline: none;
+}
+#filter-input:focus { border-color: var(--accent); }
+
+#events-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+#events-list::-webkit-scrollbar { width: 6px; }
+#events-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+#empty-state {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 24px;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.6;
+}
+#empty-state code {
+  background: var(--bg-code);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--orange);
+  font-family: 'Cascadia Code', 'Fira Code', monospace;
+}
+body.no-events #empty-state   { display: flex; }
+body.no-events #events-list   { display: none; }
+
+/* ── Event items ── */
+.event-item {
+  border-bottom: 1px solid #272727;
+  transition: background 0.1s;
+}
+.event-item.hidden { display: none; }
+
+.event-header {
+  display: flex;
+  align-items: center;
+  padding: 7px 10px;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.event-header:hover { background: var(--bg-hover); }
+
+.event-index {
+  font-size: 10px;
+  color: var(--text-muted);
+  min-width: 26px;
+  font-family: monospace;
+}
+
+.event-name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--green);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-time {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.event-chevron {
+  font-size: 9px;
+  color: var(--text-muted);
+  transition: transform 0.15s;
+  margin-left: 2px;
+}
+.event-item.expanded .event-chevron { transform: rotate(90deg); }
+
+.event-body {
+  display: none;
+  padding: 0 10px 10px;
+}
+.event-item.expanded .event-body { display: block; }
+
+.event-url {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-json {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 11px;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  line-height: 1.6;
+  overflow: auto;
+  max-height: 320px;
+  white-space: pre;
+  word-break: normal;
+}
+
+/* JSON syntax colours */
+.jk { color: var(--blue);   }   /* key    */
+.js { color: var(--orange); }   /* string */
+.jn { color: #b5cea8;       }   /* number */
+.jb { color: var(--purple); }   /* boolean */
+.jl { color: var(--text-muted); } /* null  */

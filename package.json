@@ -1,0 +1,15 @@
+{
+  "name": "datalayer-logger",
+  "version": "1.0.0",
+  "description": "Electron browser that captures Google Tag Manager dataLayer push events as JSON",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": ["electron", "datalayer", "gtm", "analytics", "browser"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^41.0.0"
+  }
+}
