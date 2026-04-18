@@ -301,6 +301,62 @@ function scanPageForClickables() {
   return Array.from(seen).map(elementInfo);
 }
 
+// Inlined page script — highlights an element by CSS selector with a pulsing overlay.
+function highlightElementInPage(selector) {
+  const prev = document.getElementById('__dl_highlight__');
+  if (prev) prev.remove();
+
+  let el;
+  try { el = document.querySelector(selector); } catch (e) {}
+  if (!el) return;
+
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  const rect = el.getBoundingClientRect();
+  const overlay = document.createElement('div');
+  overlay.id = '__dl_highlight__';
+  const pad = 3;
+  overlay.style.cssText = [
+    'position:fixed',
+    `top:${rect.top - pad}px`,
+    `left:${rect.left - pad}px`,
+    `width:${rect.width + pad * 2}px`,
+    `height:${rect.height + pad * 2}px`,
+    'border:2px solid #007acc',
+    'background:rgba(0,122,204,0.12)',
+    'pointer-events:none',
+    'z-index:2147483647',
+    'box-sizing:border-box',
+    'border-radius:3px',
+    'transition:opacity 0.4s ease',
+    'opacity:1',
+  ].join(';');
+
+  // Pulsing outline via box-shadow keyframes injected once
+  if (!document.getElementById('__dl_highlight_style__')) {
+    const s = document.createElement('style');
+    s.id = '__dl_highlight_style__';
+    s.textContent = '@keyframes __dl_pulse {0%,100%{box-shadow:0 0 0 0 rgba(0,122,204,0.5)}50%{box-shadow:0 0 0 6px rgba(0,122,204,0)}}';
+    document.head.appendChild(s);
+  }
+  overlay.style.animation = '__dl_pulse 0.8s ease 2';
+
+  document.body.appendChild(overlay);
+  setTimeout(() => { overlay.style.opacity = '0'; }, 2200);
+  setTimeout(() => { overlay.remove(); }, 2600);
+}
+
+ipcMain.handle('highlight-element', async (_e, selector) => {
+  if (!browserView) return;
+  try {
+    await browserView.webContents.executeJavaScript(
+      `(${highlightElementInPage.toString()})(${JSON.stringify(selector)})`
+    );
+  } catch (err) {
+    console.error('Highlight failed:', err);
+  }
+});
+
 ipcMain.handle('scan-clickable-elements', async () => {
   if (!browserView) return { url: '', elements: [] };
   try {
