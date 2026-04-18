@@ -96,9 +96,8 @@ const { ipcRenderer } = require('electron');
       let fnName    = '(anonymous)';
       let fnPreview = '';
       if (typeof listener === 'function') {
-        fnName    = listener.name || '(anonymous)';
-        fnPreview = listener.toString().replace(/\s+/g, ' ').trim().slice(0, 160);
-        if (fnPreview.length === 160) fnPreview += '\u2026';
+        fnName = listener.name || '(anonymous)';
+        try { fnPreview = listener.toString(); } catch (e) { fnPreview = '[native code]'; }
       }
 
       const entry = { type, capture, once, passive, fnName, fnPreview };
