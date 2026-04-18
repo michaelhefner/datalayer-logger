@@ -200,6 +200,122 @@ ipcMain.on('export-events', async () => {
 });
 
 // ---------------------------------------------------------------------------
+// IPC — clickable element scanner
+// ---------------------------------------------------------------------------
+
+// This function is serialised via .toString() and executed inside the page
+// context via executeJavaScript. It must use only browser globals.
+function scanPageForClickables() {
+  const SEMANTIC_SEL = [
+    'a[href]', 'button', 'summary',
+    'input[type="button"]', 'input[type="submit"]',
+    'input[type="reset"]', 'input[type="image"]',
+    'input[type="checkbox"]', 'input[type="radio"]',
+    'select', 'textarea',
+    '[role="button"]', '[role="link"]', '[role="menuitem"]',
+    '[role="tab"]', '[role="checkbox"]', '[role="radio"]',
+    '[role="switch"]', '[role="option"]', '[role="treeitem"]',
+    '[onclick]', '[onmousedown]', '[onmouseup]',
+    '[tabindex]:not([tabindex="-1"])',
+  ].join(',');
+
+  function escapeId(id) {
+    try { return CSS.escape(id); } catch (e) { return id; }
+  }
+
+  function getSelector(el) {
+    if (el.id) return '#' + escapeId(el.id);
+    const parts = [];
+    let cur = el;
+    while (cur && cur.tagName && cur !== document.documentElement) {
+      let tag = cur.tagName.toLowerCase();
+      if (cur.id) { parts.unshift('#' + escapeId(cur.id)); break; }
+      const siblings = cur.parentNode
+        ? Array.from(cur.parentNode.children).filter(s => s.tagName === cur.tagName)
+        : [];
+      if (siblings.length > 1) {
+        const idx = siblings.indexOf(cur) + 1;
+        tag += `:nth-of-type(${idx})`;
+      }
+      parts.unshift(tag);
+      cur = cur.parentNode;
+    }
+    return parts.join(' > ');
+  }
+
+  function getText(el) {
+    const t = (el.textContent || el.value || el.alt ||
+      el.getAttribute('aria-label') || el.getAttribute('title') || '')
+      .replace(/\s+/g, ' ').trim();
+    return t.length > 100 ? t.slice(0, 100) + '\u2026' : t;
+  }
+
+  function isVisible(el) {
+    try {
+      const rect = el.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) return false;
+      const st = window.getComputedStyle(el);
+      return st.display !== 'none' && st.visibility !== 'hidden' && parseFloat(st.opacity) > 0;
+    } catch (e) { return false; }
+  }
+
+  function elementInfo(el) {
+    const rect = el.getBoundingClientRect();
+    const classes = (el.className && typeof el.className === 'string')
+      ? el.className.trim().split(/\s+/).filter(Boolean).slice(0, 6)
+      : [];
+    return {
+      tag: el.tagName.toLowerCase(),
+      text: getText(el),
+      href: el.href || null,
+      id: el.id || null,
+      classes,
+      role: el.getAttribute('role') || null,
+      type: el.getAttribute('type') || null,
+      ariaLabel: el.getAttribute('aria-label') || null,
+      name: el.getAttribute('name') || null,
+      placeholder: el.getAttribute('placeholder') || null,
+      selector: getSelector(el),
+      visible: isVisible(el),
+      rect: {
+        top:    Math.round(rect.top  + window.scrollY),
+        left:   Math.round(rect.left + window.scrollX),
+        width:  Math.round(rect.width),
+        height: Math.round(rect.height),
+      },
+    };
+  }
+
+  const seen = new Set();
+
+  // 1. Semantic / ARIA-role clickable elements
+  try { document.querySelectorAll(SEMANTIC_SEL).forEach(el => seen.add(el)); } catch (e) {}
+
+  // 2. Elements styled cursor:pointer (capped to avoid page freezes)
+  const all = document.querySelectorAll('*');
+  const limit = Math.min(all.length, 3000);
+  for (let i = 0; i < limit; i++) {
+    try { if (window.getComputedStyle(all[i]).cursor === 'pointer') seen.add(all[i]); } catch (e) {}
+  }
+
+  return Array.from(seen).map(elementInfo);
+}
+
+ipcMain.handle('scan-clickable-elements', async () => {
+  if (!browserView) return { url: '', elements: [] };
+  try {
+    const url = browserView.webContents.getURL();
+    const elements = await browserView.webContents.executeJavaScript(
+      `(${scanPageForClickables.toString()})()`
+    );
+    return { url, elements };
+  } catch (err) {
+    console.error('Scan failed:', err);
+    return { url: '', elements: [], error: err.message };
+  }
+});
+
+// ---------------------------------------------------------------------------
 // App lifecycle
 // ---------------------------------------------------------------------------
 

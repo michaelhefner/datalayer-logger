@@ -13,6 +13,17 @@ const clearBtn    = document.getElementById('clear-btn');
 const sessionPath = document.getElementById('session-path');
 const filterInput = document.getElementById('filter-input');
 
+// Clickable elements
+const elementBadge       = document.getElementById('element-badge');
+const scanBtn            = document.getElementById('scan-btn');
+const copyElementsBtn    = document.getElementById('copy-elements-btn');
+const elementsList       = document.getElementById('elements-list');
+const elementsEmptyState = document.getElementById('elements-empty-state');
+const elementFilterInput = document.getElementById('element-filter-input');
+const visibleOnlyCb      = document.getElementById('visible-only-cb');
+const autoScanCb         = document.getElementById('auto-scan-cb');
+const elementsCount      = document.getElementById('elements-count');
+
 let totalCount = 0;
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -158,10 +169,120 @@ clearBtn.addEventListener('click', () => {
 
 filterInput.addEventListener('input', applyFilter);
 
+// ── Tab switching ─────────────────────────────────────────────────────────
+
+document.querySelectorAll('.tab-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`panel-${btn.dataset.tab}`).classList.add('active');
+  });
+});
+
+// ── Clickable elements panel ──────────────────────────────────────────────
+
+let scannedElements = [];
+
+function tagClass(tag) {
+  if (tag === 'a')                          return 'el-tag-a';
+  if (tag === 'button' || tag === 'summary') return 'el-tag-button';
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return 'el-tag-input';
+  if (tag === 'select')                     return 'el-tag-select';
+  return 'el-tag-other';
+}
+
+function elMeta(el) {
+  if (el.href)        return el.href;
+  if (el.role)        return `role=${el.role}`;
+  if (el.type)        return `type=${el.type}`;
+  if (el.name)        return `name=${el.name}`;
+  if (el.placeholder) return el.placeholder;
+  if (el.ariaLabel)   return el.ariaLabel;
+  return el.selector;
+}
+
+function renderElements() {
+  const visOnly = visibleOnlyCb.checked;
+  const term    = elementFilterInput.value.trim().toLowerCase();
+  const pool    = visOnly ? scannedElements.filter(e => e.visible) : scannedElements;
+
+  elementsList.innerHTML = '';
+  let shown = 0;
+
+  pool.forEach((el) => {
+    const meta     = elMeta(el);
+    const haystack = `${el.tag} ${el.text} ${meta} ${el.selector}`.toLowerCase();
+    if (term && !haystack.includes(term)) return;
+
+    shown++;
+    const item = document.createElement('div');
+    item.className = 'el-item' + (el.visible ? '' : ' el-invisible');
+
+    item.innerHTML = `
+      <span class="el-tag ${tagClass(el.tag)}">&lt;${escapeHtml(el.tag)}&gt;</span>
+      <div class="el-body">
+        <div class="el-text">${escapeHtml(el.text)}</div>
+        <div class="el-meta">${escapeHtml(meta)}</div>
+      </div>
+      <button class="el-copy-btn" title="Copy CSS selector">Copy</button>
+    `;
+
+    const copyBtn = item.querySelector('.el-copy-btn');
+    copyBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(el.selector).then(() => {
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 1500);
+      });
+    });
+
+    elementsList.appendChild(item);
+  });
+
+  const total = pool.length;
+  elementsCount.textContent = term
+    ? `${shown} of ${total} matching`
+    : `${total} element${total !== 1 ? 's' : ''} found`;
+
+  elementsEmptyState.style.display = (total === 0 && !term) ? 'flex' : 'none';
+  elementBadge.textContent = scannedElements.filter(e => e.visible).length;
+}
+
+async function runScan() {
+  scanBtn.textContent = 'Scanning…';
+  scanBtn.classList.add('scanning');
+  scanBtn.disabled = true;
+  try {
+    const result = await window.electronAPI.scanClickableElements();
+    scannedElements = result.elements || [];
+    renderElements();
+  } catch (err) {
+    console.error('Scan error:', err);
+  } finally {
+    scanBtn.textContent = 'Scan Page';
+    scanBtn.classList.remove('scanning');
+    scanBtn.disabled = false;
+  }
+}
+
+scanBtn.addEventListener('click', runScan);
+
+copyElementsBtn.addEventListener('click', () => {
+  const visOnly = visibleOnlyCb.checked;
+  const data = visOnly ? scannedElements.filter(e => e.visible) : scannedElements;
+  navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+});
+
+visibleOnlyCb.addEventListener('change', renderElements);
+elementFilterInput.addEventListener('input', renderElements);
+
 // ── IPC subscriptions ─────────────────────────────────────────────────────
 
 window.electronAPI.onUrlChanged((url) => {
   urlBar.value = url;
+  if (autoScanCb.checked) runScan();
 });
 
 window.electronAPI.onNewEvent((entry) => {

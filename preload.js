@@ -17,6 +17,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   clearEvents: () => ipcRenderer.send('clear-events'),
   exportEvents: () => ipcRenderer.send('export-events'),
 
+  // Clickable element scanner
+  scanClickableElements: () => ipcRenderer.invoke('scan-clickable-elements'),
+
   // Subscriptions (one-way from main → renderer)
   onUrlChanged: (cb) =>
     ipcRenderer.on('url-changed', (_e, url) => cb(url)),
