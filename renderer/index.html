@@ -20,31 +20,74 @@
     <button id="go-btn">Go</button>
   </header>
 
-  <!-- ── Right sidebar – event log ── -->
+  <!-- ── Right sidebar ── -->
   <aside id="sidebar">
-    <div id="sidebar-header">
-      <span id="sidebar-title">
-        DataLayer Events&nbsp;
-        <span id="event-badge">0</span>
-      </span>
-      <div id="sidebar-actions">
-        <button id="export-btn" title="Export all events to a JSON file">Export</button>
-        <button id="clear-btn"  title="Clear captured events and start a new session">Clear</button>
+    <div id="sidebar-resize-handle" title="Drag to resize"></div>
+
+    <!-- Tab buttons -->
+    <nav id="sidebar-tabs">
+      <button class="tab-btn active" data-tab="events">
+        DataLayer&nbsp;<span id="event-badge" class="badge">0</span>
+      </button>
+      <button class="tab-btn" data-tab="elements">
+        Clickable&nbsp;<span id="element-badge" class="badge">0</span>
+      </button>
+    </nav>
+
+    <!-- ── Panel: DataLayer Events ── -->
+    <div id="panel-events" class="tab-panel active">
+      <div id="sidebar-header">
+        <div id="sidebar-actions">
+          <button id="export-btn" title="Export all events to a JSON file">Export</button>
+          <button id="clear-btn"  title="Clear captured events and start a new session">Clear</button>
+        </div>
+      </div>
+
+      <div id="session-path" title="Events are auto-saved here"></div>
+
+      <div id="filter-bar">
+        <input id="filter-input" type="text" placeholder="Filter by event name…" />
+      </div>
+
+      <div id="events-list" aria-live="polite"></div>
+
+      <div id="empty-state">
+        <p>No events captured yet.</p>
+        <p>Navigate to a page that uses Google Tag Manager or the <code>dataLayer</code> API.</p>
       </div>
     </div>
 
-    <div id="session-path" title="Events are auto-saved here"></div>
+    <!-- ── Panel: Clickable Elements ── -->
+    <div id="panel-elements" class="tab-panel">
+      <div id="elements-header">
+        <div id="elements-actions">
+          <label class="toggle-label">
+            <input type="checkbox" id="visible-only-cb" checked />
+            Visible only
+          </label>
+          <label class="toggle-label">
+            <input type="checkbox" id="auto-scan-cb" />
+            Auto-scan
+          </label>
+          <button id="copy-elements-btn" title="Copy all results as JSON">Copy JSON</button>
+          <button id="log-listeners-btn" title="Save elements with listeners to a JSON file">Log Listeners</button>
+          <button id="scan-btn">Scan Page</button>
+        </div>
+        <div id="elements-count"></div>
+      </div>
 
-    <div id="filter-bar">
-      <input id="filter-input" type="text" placeholder="Filter by event name…" />
+      <div id="element-filter-bar">
+        <input id="element-filter-input" type="text" placeholder="Filter by tag, text, href, selector…" />
+      </div>
+
+      <div id="elements-list"></div>
+
+      <div id="elements-empty-state">
+        <p>No scan results yet.</p>
+        <p>Click <strong>Scan Page</strong> to find all clickable elements on the current page.</p>
+      </div>
     </div>
 
-    <div id="events-list" aria-live="polite"></div>
-
-    <div id="empty-state">
-      <p>No events captured yet.</p>
-      <p>Navigate to a page that uses Google Tag Manager or the <code>dataLayer</code> API.</p>
-    </div>
   </aside>
 
   <script src="renderer.js"></script>
