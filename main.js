@@ -206,6 +206,29 @@ ipcMain.on('export-events', async () => {
   }
 });
 
+ipcMain.on('export-listeners', async (_e, elements) => {
+  if (!mainWindow) return;
+  const url    = browserView ? browserView.webContents.getURL() : '';
+  const report = {
+    exportedAt: new Date().toISOString(),
+    pageUrl: url,
+    totalElements: elements.length,
+    elements,
+  };
+  const { filePath } = await dialog.showSaveDialog(mainWindow, {
+    title: 'Export Elements with Listeners',
+    defaultPath: `listeners-${Date.now()}.json`,
+    filters: [{ name: 'JSON Files', extensions: ['json'] }],
+  });
+  if (filePath) {
+    try {
+      fs.writeFileSync(filePath, JSON.stringify(report, null, 2), 'utf8');
+    } catch (err) {
+      console.error('Listener export failed:', err);
+    }
+  }
+});
+
 // ---------------------------------------------------------------------------
 // IPC — clickable element scanner
 // ---------------------------------------------------------------------------

@@ -385,6 +385,7 @@ body.no-events #events-list   { display: none; }
 #scan-btn:hover     { background: var(--accent-h); }
 #scan-btn.scanning  { opacity: 0.6; cursor: wait; }
 #copy-elements-btn  { color: var(--green); }
+#log-listeners-btn  { color: var(--yellow); }
 
 #elements-count {
   margin-top: 4px;

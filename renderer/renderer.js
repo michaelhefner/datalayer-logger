@@ -17,6 +17,7 @@ const filterInput = document.getElementById('filter-input');
 const elementBadge       = document.getElementById('element-badge');
 const scanBtn            = document.getElementById('scan-btn');
 const copyElementsBtn    = document.getElementById('copy-elements-btn');
+const logListenersBtn    = document.getElementById('log-listeners-btn');
 const elementsList       = document.getElementById('elements-list');
 const elementsEmptyState = document.getElementById('elements-empty-state');
 const elementFilterInput = document.getElementById('element-filter-input');
@@ -561,6 +562,30 @@ copyElementsBtn.addEventListener('click', () => {
   const visOnly = visibleOnlyCb.checked;
   const data = visOnly ? scannedElements.filter(e => e.visible) : scannedElements;
   navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+});
+
+logListenersBtn.addEventListener('click', () => {
+  const visOnly = visibleOnlyCb.checked;
+  const pool    = visOnly ? scannedElements.filter(e => e.visible) : scannedElements;
+  const withListeners = pool
+    .filter(e => e.listeners && e.listeners.length > 0)
+    .map(e => ({
+      selector: e.selector,
+      tag:      e.tag,
+      text:     e.text,
+      href:     e.href,
+      id:       e.id,
+      classes:  e.classes,
+      role:     e.role,
+      visible:  e.visible,
+      rect:     e.rect,
+      listeners: e.listeners,
+    }));
+  if (withListeners.length === 0) {
+    alert('No elements with event listeners found. Try scanning the page first.');
+    return;
+  }
+  window.electronAPI.exportListeners(withListeners);
 });
 
 visibleOnlyCb.addEventListener('change', renderElements);
