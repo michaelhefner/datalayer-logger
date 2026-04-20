@@ -15,7 +15,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getEvents: () => ipcRenderer.invoke('get-events'),
   getSessionFile: () => ipcRenderer.invoke('get-session-file'),
   clearEvents: () => ipcRenderer.send('clear-events'),
-  exportEvents: () => ipcRenderer.send('export-events'),
+  exportEvents: (format) => ipcRenderer.send('export-events', format),
 
   // Clickable element scanner
   scanClickableElements: () => ipcRenderer.invoke('scan-clickable-elements'),

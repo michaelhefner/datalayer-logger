@@ -9,6 +9,7 @@ const reloadBtn = document.getElementById('reload-btn');
 const eventsList = document.getElementById('events-list');
 const eventBadge = document.getElementById('event-badge');
 const exportBtn = document.getElementById('export-btn');
+const exportCsvBtn = document.getElementById('export-csv-btn');
 const clearBtn = document.getElementById('clear-btn');
 const sessionPath = document.getElementById('session-path');
 const filterInput = document.getElementById('filter-input');
@@ -357,6 +358,7 @@ document.addEventListener('keydown', (e) => {
 // ── Event log actions ─────────────────────────────────────────────────────
 
 exportBtn.addEventListener('click', () => window.electronAPI.exportEvents());
+exportCsvBtn.addEventListener('click', () => window.electronAPI.exportEvents('csv'));
 
 clearBtn.addEventListener('click', () => {
   window.electronAPI.clearEvents();

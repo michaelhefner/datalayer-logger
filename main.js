@@ -13,6 +13,7 @@ let mainWindow = null;
 let browserView = null;
 let capturedEvents = [];
 let sessionFilePath = null;
+let sessionCsvPath = null;
 
 // ---------------------------------------------------------------------------
 // Network logging state
@@ -117,10 +118,51 @@ function getEventsDir() {
   return dir;
 }
 
+function csvEscapeField(value) {
+  const str = value === null || value === undefined ? '' : String(value);
+  return '"' + str.replace(/"/g, '""') + '"';
+}
+
+// Flatten entry.event keys into a single object alongside id/timestamp/url.
+// Nested values are JSON-stringified; primitives are converted to strings.
+function flattenEventEntry(entry) {
+  const flat = { id: entry.id, timestamp: entry.timestamp, url: entry.url };
+  if (entry.event && typeof entry.event === 'object') {
+    for (const [k, v] of Object.entries(entry.event)) {
+      flat[k] = (v === null || v === undefined) ? ''
+        : (typeof v === 'object') ? JSON.stringify(v)
+          : String(v);
+    }
+  }
+  return flat;
+}
+
+// Build a complete CSV string from an array of captured entries.
+// Headers are the union of all event keys, preserving insertion order.
+function buildCsvContent(events) {
+  const keyOrder = ['id', 'timestamp', 'url'];
+  const keySet = new Set(keyOrder);
+  for (const entry of events) {
+    if (entry.event && typeof entry.event === 'object') {
+      for (const k of Object.keys(entry.event)) {
+        if (!keySet.has(k)) { keySet.add(k); keyOrder.push(k); }
+      }
+    }
+  }
+  const lines = [keyOrder.map(csvEscapeField).join(',')];
+  for (const entry of events) {
+    const flat = flattenEventEntry(entry);
+    lines.push(keyOrder.map(h => csvEscapeField(flat[h] ?? '')).join(','));
+  }
+  return lines.join('\n') + '\n';
+}
+
 function createSessionFile() {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   sessionFilePath = path.join(getEventsDir(), `session-${timestamp}.json`);
+  sessionCsvPath = path.join(getEventsDir(), `session-${timestamp}.csv`);
   fs.writeFileSync(sessionFilePath, '[]', 'utf8');
+  fs.writeFileSync(sessionCsvPath, '', 'utf8');
   return sessionFilePath;
 }
 
@@ -130,6 +172,15 @@ function persistEvents() {
     fs.writeFileSync(sessionFilePath, JSON.stringify(capturedEvents, null, 2), 'utf8');
   } catch (err) {
     console.error('Failed to write events file:', err);
+  }
+}
+
+function persistCsv() {
+  if (!sessionCsvPath) return;
+  try {
+    fs.writeFileSync(sessionCsvPath, buildCsvContent(capturedEvents), 'utf8');
+  } catch (err) {
+    console.error('Failed to write CSV:', err);
   }
 }
 
@@ -299,6 +350,7 @@ ipcMain.on('datalayer-event', (_e, data) => {
   };
   capturedEvents.push(entry);
   persistEvents();
+  persistCsv();
 
   if (mainWindow) {
     mainWindow.webContents.send('new-datalayer-event', entry);
@@ -321,16 +373,23 @@ ipcMain.on('clear-events', () => {
   }
 });
 
-ipcMain.on('export-events', async () => {
+ipcMain.on('export-events', async (_e, format) => {
   if (!mainWindow) return;
+  const isCsv = format === 'csv';
   const { filePath } = await dialog.showSaveDialog(mainWindow, {
-    title: 'Export DataLayer Events',
-    defaultPath: `datalayer-events-${Date.now()}.json`,
-    filters: [{ name: 'JSON Files', extensions: ['json'] }],
+    title: isCsv ? 'Export DataLayer Events as CSV' : 'Export DataLayer Events',
+    defaultPath: isCsv ? `datalayer-events-${Date.now()}.csv` : `datalayer-events-${Date.now()}.json`,
+    filters: isCsv
+      ? [{ name: 'CSV Files', extensions: ['csv'] }]
+      : [{ name: 'JSON Files', extensions: ['json'] }],
   });
   if (filePath) {
     try {
-      fs.writeFileSync(filePath, JSON.stringify(capturedEvents, null, 2), 'utf8');
+      if (isCsv) {
+        fs.writeFileSync(filePath, buildCsvContent(capturedEvents), 'utf8');
+      } else {
+        fs.writeFileSync(filePath, JSON.stringify(capturedEvents, null, 2), 'utf8');
+      }
     } catch (err) {
       console.error('Export failed:', err);
     }
