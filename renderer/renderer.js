@@ -606,6 +606,220 @@ window.electronAPI.onSessionFileChanged((filePath) => {
   sessionPath.textContent = `Saving to: ${filePath}`;
 });
 
+// ── Network panel ─────────────────────────────────────────────────────────
+
+const networkBadge       = document.getElementById('network-badge');
+const networkList        = document.getElementById('network-list');
+const networkEmptyState  = document.getElementById('network-empty-state');
+const networkEnabledCb   = document.getElementById('network-enabled-cb');
+const exportNetworkBtn   = document.getElementById('export-network-btn');
+const clearNetworkBtn    = document.getElementById('clear-network-btn');
+const networkFilterInput = document.getElementById('network-filter-input');
+const networkFilterTags  = document.getElementById('network-filter-tags');
+const networkSearchInput = document.getElementById('network-search-input');
+
+let networkFilters  = [];
+let networkCount    = 0;
+let networkEntries  = [];
+
+// ── Filter tag management ─────────────────────────────────────────────────
+
+function renderFilterTags() {
+  networkFilterTags.innerHTML = '';
+  networkFilters.forEach((f, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'net-filter-chip';
+    chip.innerHTML = `${escapeHtml(f)}<button class="net-chip-remove" data-i="${i}" title="Remove">&#x2715;</button>`;
+    networkFilterTags.appendChild(chip);
+  });
+  networkFilterTags.querySelectorAll('.net-chip-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      networkFilters.splice(+btn.dataset.i, 1);
+      window.electronAPI.setNetworkFilters(networkFilters);
+      renderFilterTags();
+      updateNetworkHint();
+    });
+  });
+}
+
+function updateNetworkHint() {
+  const hint = document.getElementById('network-filter-hint');
+  hint.textContent = networkFilters.length === 0
+    ? 'No filters = capture all requests'
+    : `Capturing ${networkFilters.length} filter pattern${networkFilters.length !== 1 ? 's' : ''}`;
+}
+
+networkFilterInput.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const val = networkFilterInput.value.trim();
+  if (!val || networkFilters.includes(val)) { networkFilterInput.value = ''; return; }
+  networkFilters.push(val);
+  window.electronAPI.setNetworkFilters(networkFilters);
+  networkFilterInput.value = '';
+  renderFilterTags();
+  updateNetworkHint();
+});
+
+// ── Status helpers ────────────────────────────────────────────────────────
+
+function statusClass(code) {
+  if (!code) return 'net-status-err';
+  if (code < 300) return 'net-status-ok';
+  if (code < 400) return 'net-status-redir';
+  if (code < 500) return 'net-status-warn';
+  return 'net-status-err';
+}
+
+function methodClass(method) {
+  const m = (method || '').toUpperCase();
+  if (m === 'GET')    return 'net-method-get';
+  if (m === 'POST')   return 'net-method-post';
+  if (m === 'PUT' || m === 'PATCH') return 'net-method-put';
+  if (m === 'DELETE') return 'net-method-del';
+  return 'net-method-other';
+}
+
+function shortUrl(url) {
+  try {
+    const u = new URL(url);
+    return u.hostname + u.pathname + (u.search.length > 40 ? u.search.slice(0, 40) + '…' : u.search);
+  } catch { return url; }
+}
+
+function formatHeaders(headers) {
+  if (!headers || typeof headers !== 'object') return '(none)';
+  return Object.entries(headers)
+    .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+    .join('\n');
+}
+
+function updateNetworkEmptyState() {
+  networkEmptyState.style.display = networkCount === 0 ? 'flex' : 'none';
+}
+
+// ── Search / filter display ───────────────────────────────────────────────
+
+function applyNetworkSearch() {
+  const term = networkSearchInput.value.trim().toLowerCase();
+  document.querySelectorAll('.net-item').forEach(el => {
+    if (!term) { el.classList.remove('hidden'); return; }
+    el.classList.toggle('hidden', !el.dataset.haystack.includes(term));
+  });
+}
+
+networkSearchInput.addEventListener('input', applyNetworkSearch);
+
+// ── Render a single network entry ─────────────────────────────────────────
+
+function addNetworkEntry(entry, prepend = true) {
+  networkCount++;
+  networkBadge.textContent = networkCount;
+  networkEntries[entry.id] = entry;
+  updateNetworkEmptyState();
+
+  const item = document.createElement('div');
+  item.className = 'net-item';
+  item.dataset.haystack = `${entry.method} ${entry.url} ${entry.statusCode || ''}`.toLowerCase();
+
+  const short   = shortUrl(entry.url);
+  const time    = new Date(entry.timestamp).toLocaleTimeString();
+  const dur     = entry.duration != null ? `${entry.duration}ms` : '—';
+  const status  = entry.error ? 'ERR' : (entry.statusCode || '—');
+  const sCls    = entry.error ? 'net-status-err' : statusClass(entry.statusCode);
+  const mCls    = methodClass(entry.method);
+
+  item.innerHTML = `
+    <div class="net-row">
+      <span class="net-method ${mCls}">${escapeHtml(entry.method || '?')}</span>
+      <span class="net-status ${sCls}">${status}</span>
+      <span class="net-url" title="${escapeHtml(entry.url)}">${escapeHtml(short)}</span>
+      <span class="net-dur">${dur}</span>
+      <span class="net-time">${time}</span>
+      <span class="net-chevron">&#9654;</span>
+    </div>
+    <div class="net-detail" style="display:none">
+      <div class="net-detail-section">
+        <div class="net-detail-label">Full URL</div>
+        <pre class="net-detail-pre">${escapeHtml(entry.url)}</pre>
+      </div>
+      ${entry.requestBody ? `
+      <div class="net-detail-section">
+        <div class="net-detail-label">Request Body</div>
+        <pre class="net-detail-pre">${escapeHtml(entry.requestBody)}</pre>
+      </div>` : ''}
+      <div class="net-detail-section">
+        <div class="net-detail-label">Request Headers</div>
+        <pre class="net-detail-pre">${escapeHtml(formatHeaders(entry.requestHeaders))}</pre>
+      </div>
+      <div class="net-detail-section">
+        <div class="net-detail-label">Response Headers</div>
+        <pre class="net-detail-pre">${escapeHtml(formatHeaders(entry.responseHeaders))}</pre>
+      </div>
+      ${entry.error ? `
+      <div class="net-detail-section">
+        <div class="net-detail-label net-detail-label-err">Error</div>
+        <pre class="net-detail-pre net-detail-err">${escapeHtml(entry.error)}</pre>
+      </div>` : ''}
+      <div class="net-detail-actions">
+        <button class="net-copy-url-btn">Copy URL</button>
+        <button class="net-copy-json-btn">Copy as JSON</button>
+      </div>
+    </div>
+  `;
+
+  // Expand/collapse
+  item.querySelector('.net-row').addEventListener('click', () => {
+    const detail = item.querySelector('.net-detail');
+    const open   = detail.style.display !== 'none';
+    detail.style.display = open ? 'none' : 'block';
+    item.classList.toggle('net-expanded', !open);
+  });
+
+  // Copy buttons
+  item.querySelector('.net-copy-url-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(entry.url);
+    const btn = e.target; btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy URL'; }, 1400);
+  });
+  item.querySelector('.net-copy-json-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(JSON.stringify(entry, null, 2));
+    const btn = e.target; btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy as JSON'; }, 1400);
+  });
+
+  if (prepend) networkList.insertBefore(item, networkList.firstChild);
+  else         networkList.appendChild(item);
+
+  applyNetworkSearch();
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────
+
+networkEnabledCb.addEventListener('change', () => {
+  window.electronAPI.setNetworkEnabled(networkEnabledCb.checked);
+});
+
+clearNetworkBtn.addEventListener('click', () => {
+  window.electronAPI.clearNetworkLog();
+  networkList.innerHTML = '';
+  networkCount  = 0;
+  networkEntries = [];
+  networkBadge.textContent = '0';
+  updateNetworkEmptyState();
+});
+
+exportNetworkBtn.addEventListener('click', () => {
+  window.electronAPI.exportNetworkLog();
+});
+
+// ── IPC subscription ──────────────────────────────────────────────────────
+
+window.electronAPI.onNetworkEntry((entry) => {
+  addNetworkEntry(entry, true);
+});
+
 // ── Initialise ────────────────────────────────────────────────────────────
 
 (async () => {
@@ -616,6 +830,16 @@ window.electronAPI.onSessionFileChanged((filePath) => {
   // Replay any events captured before the renderer was ready
   const existing = await window.electronAPI.getEvents();
   existing.forEach((entry) => addEventToList(entry, false));
+
+  // Restore network state
+  const [existingNet, existingFilters] = await Promise.all([
+    window.electronAPI.getNetworkLog(),
+    window.electronAPI.getNetworkFilters(),
+  ]);
+  networkFilters = existingFilters || [];
+  renderFilterTags();
+  updateNetworkHint();
+  existingNet.forEach(e => addNetworkEntry(e, false));
 
   updateEmptyState();
 })();

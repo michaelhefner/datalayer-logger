@@ -32,6 +32,9 @@
       <button class="tab-btn" data-tab="elements">
         Clickable&nbsp;<span id="element-badge" class="badge">0</span>
       </button>
+      <button class="tab-btn" data-tab="network">
+        Network&nbsp;<span id="network-badge" class="badge">0</span>
+      </button>
     </nav>
 
     <!-- ── Panel: DataLayer Events ── -->
@@ -85,6 +88,42 @@
       <div id="elements-empty-state">
         <p>No scan results yet.</p>
         <p>Click <strong>Scan Page</strong> to find all clickable elements on the current page.</p>
+      </div>
+    </div>
+
+    <!-- ── Panel: Network ── -->
+    <div id="panel-network" class="tab-panel">
+
+      <div id="network-header">
+        <div id="network-actions">
+          <label class="toggle-label">
+            <input type="checkbox" id="network-enabled-cb" checked />
+            Capture
+          </label>
+          <button id="export-network-btn" title="Export network log as JSON">Export</button>
+          <button id="clear-network-btn"  title="Clear network log">Clear</button>
+        </div>
+      </div>
+
+      <!-- Domain / URL filters -->
+      <div id="network-filters-section">
+        <div id="network-filter-tags"></div>
+        <input id="network-filter-input" type="text"
+               placeholder="Add domain or URL filter and press Enter…"
+               autocomplete="off" spellcheck="false" />
+        <div id="network-filter-hint">No filters = capture all requests</div>
+      </div>
+
+      <!-- Search bar -->
+      <div id="network-search-bar">
+        <input id="network-search-input" type="text" placeholder="Search URL, method, status…" />
+      </div>
+
+      <div id="network-list"></div>
+
+      <div id="network-empty-state">
+        <p>No requests captured yet.</p>
+        <p>Add a domain filter or leave blank to capture all, then navigate to a page.</p>
       </div>
     </div>
 

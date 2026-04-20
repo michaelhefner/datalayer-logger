@@ -15,6 +15,97 @@ let capturedEvents = [];
 let sessionFilePath = null;
 
 // ---------------------------------------------------------------------------
+// Network logging state
+// ---------------------------------------------------------------------------
+
+let networkLog      = [];          // completed request entries
+let networkPending  = new Map();   // requestId → partial entry (in-flight)
+let networkFilters  = [];          // user-defined domain / URL substring filters
+let networkEnabled  = true;
+let networkIdSeq    = 0;
+
+function matchesNetworkFilters(url) {
+  if (networkFilters.length === 0) return true;
+  const lower = url.toLowerCase();
+  return networkFilters.some(f => lower.includes(f.toLowerCase()));
+}
+
+function setupNetworkLogging(ses) {
+  ses.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, (details, cb) => {
+    if (networkEnabled && matchesNetworkFilters(details.url)) {
+      const entry = {
+        _seq:        ++networkIdSeq,
+        requestId:   details.id,
+        timestamp:   new Date().toISOString(),
+        timeStart:   details.timeStamp,
+        timeEnd:     null,
+        duration:    null,
+        method:      details.method,
+        url:         details.url,
+        resourceType: details.resourceType || null,
+        pageUrl:     browserView ? browserView.webContents.getURL() : '',
+        requestBody: details.uploadData ? parseRequestBody(details.uploadData) : null,
+        requestHeaders:  null,
+        statusCode:      null,
+        statusLine:      null,
+        responseHeaders: null,
+        error:           null,
+      };
+      networkPending.set(details.id, entry);
+    }
+    cb({});
+  });
+
+  ses.webRequest.onBeforeSendHeaders({ urls: ['<all_urls>'] }, (details, cb) => {
+    const entry = networkPending.get(details.id);
+    if (entry) entry.requestHeaders = details.requestHeaders || null;
+    cb({ requestHeaders: details.requestHeaders });
+  });
+
+  ses.webRequest.onCompleted({ urls: ['<all_urls>'] }, (details) => {
+    const entry = networkPending.get(details.id);
+    if (!entry) return;
+    networkPending.delete(details.id);
+    entry.timeEnd        = details.timeStamp;
+    entry.duration       = Math.round(details.timeStamp - entry.timeStart);
+    entry.statusCode     = details.statusCode;
+    entry.statusLine     = details.statusLine || null;
+    entry.responseHeaders = details.responseHeaders || null;
+    const finalEntry = { id: entry._seq, ...entry };
+    delete finalEntry._seq;
+    delete finalEntry.requestId;
+    networkLog.push(finalEntry);
+    if (mainWindow) mainWindow.webContents.send('network-entry', finalEntry);
+  });
+
+  ses.webRequest.onErrorOccurred({ urls: ['<all_urls>'] }, (details) => {
+    const entry = networkPending.get(details.id);
+    if (!entry) return;
+    networkPending.delete(details.id);
+    entry.timeEnd  = details.timeStamp;
+    entry.duration = Math.round(details.timeStamp - entry.timeStart);
+    entry.error    = details.error;
+    const finalEntry = { id: entry._seq, ...entry };
+    delete finalEntry._seq;
+    delete finalEntry.requestId;
+    networkLog.push(finalEntry);
+    if (mainWindow) mainWindow.webContents.send('network-entry', finalEntry);
+  });
+}
+
+function parseRequestBody(uploadData) {
+  if (!uploadData || uploadData.length === 0) return null;
+  try {
+    const parts = uploadData.map(item => {
+      if (item.bytes) return Buffer.from(item.bytes).toString('utf8');
+      if (item.file)  return `[File: ${item.file}]`;
+      return '';
+    });
+    return parts.join('');
+  } catch (e) { return null; }
+}
+
+// ---------------------------------------------------------------------------
 // Session file helpers
 // ---------------------------------------------------------------------------
 
@@ -92,6 +183,8 @@ function createWindow() {
   mainWindow.contentView.addChildView(browserView);
   updateBrowserViewBounds();
 
+  setupNetworkLogging(browserView.webContents.session);
+
   browserView.webContents.loadURL('https://www.google.com');
 
   // Keep the URL bar in sync
@@ -153,6 +246,44 @@ ipcMain.on('reload', () => {
 ipcMain.on('resize-sidebar', (_e, width) => {
   SIDEBAR_WIDTH = Math.min(MAX_SIDEBAR, Math.max(MIN_SIDEBAR, Math.round(width)));
   updateBrowserViewBounds();
+});
+
+// ---------------------------------------------------------------------------
+// IPC — network logging
+// ---------------------------------------------------------------------------
+
+ipcMain.handle('get-network-log',     () => networkLog);
+ipcMain.handle('get-network-filters', () => networkFilters);
+
+ipcMain.on('clear-network-log', () => {
+  networkLog     = [];
+  networkPending.clear();
+  networkIdSeq   = 0;
+});
+
+ipcMain.on('set-network-filters', (_e, filters) => {
+  networkFilters = Array.isArray(filters) ? filters : [];
+});
+
+ipcMain.on('set-network-enabled', (_e, enabled) => {
+  networkEnabled = !!enabled;
+});
+
+ipcMain.on('export-network-log', async (_e, filtered) => {
+  if (!mainWindow) return;
+  const data = filtered !== undefined ? filtered : networkLog;
+  const { filePath } = await dialog.showSaveDialog(mainWindow, {
+    title: 'Export Network Log',
+    defaultPath: `network-log-${Date.now()}.json`,
+    filters: [{ name: 'JSON Files', extensions: ['json'] }],
+  });
+  if (filePath) {
+    try {
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+    } catch (err) {
+      console.error('Network export failed:', err);
+    }
+  }
 });
 
 // ---------------------------------------------------------------------------
