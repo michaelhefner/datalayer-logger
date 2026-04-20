@@ -5,9 +5,9 @@ const path = require('path');
 const fs = require('fs');
 
 const TOOLBAR_HEIGHT = 52;
-const MIN_SIDEBAR   = 280;
-const MAX_SIDEBAR   = 900;
-let   SIDEBAR_WIDTH = 390;
+const MIN_SIDEBAR = 280;
+const MAX_SIDEBAR = 900;
+let SIDEBAR_WIDTH = 390;
 
 let mainWindow = null;
 let browserView = null;
@@ -18,11 +18,11 @@ let sessionFilePath = null;
 // Network logging state
 // ---------------------------------------------------------------------------
 
-let networkLog      = [];          // completed request entries
-let networkPending  = new Map();   // requestId → partial entry (in-flight)
-let networkFilters  = [];          // user-defined domain / URL substring filters
-let networkEnabled  = true;
-let networkIdSeq    = 0;
+let networkLog = [];          // completed request entries
+let networkPending = new Map();   // requestId → partial entry (in-flight)
+let networkFilters = [];          // user-defined domain / URL substring filters
+let networkEnabled = true;
+let networkIdSeq = 0;
 
 function matchesNetworkFilters(url) {
   if (networkFilters.length === 0) return true;
@@ -34,22 +34,22 @@ function setupNetworkLogging(ses) {
   ses.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, (details, cb) => {
     if (networkEnabled && matchesNetworkFilters(details.url)) {
       const entry = {
-        _seq:        ++networkIdSeq,
-        requestId:   details.id,
-        timestamp:   new Date().toISOString(),
-        timeStart:   details.timeStamp,
-        timeEnd:     null,
-        duration:    null,
-        method:      details.method,
-        url:         details.url,
+        _seq: ++networkIdSeq,
+        requestId: details.id,
+        timestamp: new Date().toISOString(),
+        timeStart: details.timeStamp,
+        timeEnd: null,
+        duration: null,
+        method: details.method,
+        url: details.url,
         resourceType: details.resourceType || null,
-        pageUrl:     browserView ? browserView.webContents.getURL() : '',
+        pageUrl: browserView ? browserView.webContents.getURL() : '',
         requestBody: details.uploadData ? parseRequestBody(details.uploadData) : null,
-        requestHeaders:  null,
-        statusCode:      null,
-        statusLine:      null,
+        requestHeaders: null,
+        statusCode: null,
+        statusLine: null,
         responseHeaders: null,
-        error:           null,
+        error: null,
       };
       networkPending.set(details.id, entry);
     }
@@ -66,10 +66,10 @@ function setupNetworkLogging(ses) {
     const entry = networkPending.get(details.id);
     if (!entry) return;
     networkPending.delete(details.id);
-    entry.timeEnd        = details.timeStamp;
-    entry.duration       = Math.round(details.timeStamp - entry.timeStart);
-    entry.statusCode     = details.statusCode;
-    entry.statusLine     = details.statusLine || null;
+    entry.timeEnd = details.timeStamp;
+    entry.duration = Math.round(details.timeStamp - entry.timeStart);
+    entry.statusCode = details.statusCode;
+    entry.statusLine = details.statusLine || null;
     entry.responseHeaders = details.responseHeaders || null;
     const finalEntry = { id: entry._seq, ...entry };
     delete finalEntry._seq;
@@ -82,9 +82,9 @@ function setupNetworkLogging(ses) {
     const entry = networkPending.get(details.id);
     if (!entry) return;
     networkPending.delete(details.id);
-    entry.timeEnd  = details.timeStamp;
+    entry.timeEnd = details.timeStamp;
     entry.duration = Math.round(details.timeStamp - entry.timeStart);
-    entry.error    = details.error;
+    entry.error = details.error;
     const finalEntry = { id: entry._seq, ...entry };
     delete finalEntry._seq;
     delete finalEntry.requestId;
@@ -98,7 +98,7 @@ function parseRequestBody(uploadData) {
   try {
     const parts = uploadData.map(item => {
       if (item.bytes) return Buffer.from(item.bytes).toString('utf8');
-      if (item.file)  return `[File: ${item.file}]`;
+      if (item.file) return `[File: ${item.file}]`;
       return '';
     });
     return parts.join('');
@@ -252,13 +252,13 @@ ipcMain.on('resize-sidebar', (_e, width) => {
 // IPC — network logging
 // ---------------------------------------------------------------------------
 
-ipcMain.handle('get-network-log',     () => networkLog);
+ipcMain.handle('get-network-log', () => networkLog);
 ipcMain.handle('get-network-filters', () => networkFilters);
 
 ipcMain.on('clear-network-log', () => {
-  networkLog     = [];
+  networkLog = [];
   networkPending.clear();
-  networkIdSeq   = 0;
+  networkIdSeq = 0;
 });
 
 ipcMain.on('set-network-filters', (_e, filters) => {
@@ -339,7 +339,7 @@ ipcMain.on('export-events', async () => {
 
 ipcMain.on('export-listeners', async (_e, elements) => {
   if (!mainWindow) return;
-  const url    = browserView ? browserView.webContents.getURL() : '';
+  const url = browserView ? browserView.webContents.getURL() : '';
   const report = {
     exportedAt: new Date().toISOString(),
     pageUrl: url,
@@ -430,8 +430,8 @@ function scanPageForClickables() {
       ? window.__dlGetListeners__(el)
       : [];
     // Also pick up inline on* attributes as synthetic listener entries.
-    const INLINE_EVENTS = ['onclick','onmousedown','onmouseup','onchange',
-      'onfocus','onblur','onkeydown','onkeyup','onkeypress','oninput','onsubmit'];
+    const INLINE_EVENTS = ['onclick', 'onmousedown', 'onmouseup', 'onchange',
+      'onfocus', 'onblur', 'onkeydown', 'onkeyup', 'onkeypress', 'oninput', 'onsubmit'];
     INLINE_EVENTS.forEach(attr => {
       if (el.hasAttribute(attr)) {
         listeners.push({
@@ -457,9 +457,9 @@ function scanPageForClickables() {
       visible: isVisible(el),
       listeners,
       rect: {
-        top:    Math.round(rect.top  + window.scrollY),
-        left:   Math.round(rect.left + window.scrollX),
-        width:  Math.round(rect.width),
+        top: Math.round(rect.top + window.scrollY),
+        left: Math.round(rect.left + window.scrollX),
+        width: Math.round(rect.width),
         height: Math.round(rect.height),
       },
     };
@@ -468,13 +468,13 @@ function scanPageForClickables() {
   const seen = new Set();
 
   // 1. Semantic / ARIA-role clickable elements
-  try { document.querySelectorAll(SEMANTIC_SEL).forEach(el => seen.add(el)); } catch (e) {}
+  try { document.querySelectorAll(SEMANTIC_SEL).forEach(el => seen.add(el)); } catch (e) { }
 
   // 2. Elements styled cursor:pointer (capped to avoid page freezes)
   const all = document.querySelectorAll('*');
   const limit = Math.min(all.length, 3000);
   for (let i = 0; i < limit; i++) {
-    try { if (window.getComputedStyle(all[i]).cursor === 'pointer') seen.add(all[i]); } catch (e) {}
+    try { if (window.getComputedStyle(all[i]).cursor === 'pointer') seen.add(all[i]); } catch (e) { }
   }
 
   return Array.from(seen).map(elementInfo);
@@ -486,7 +486,7 @@ function highlightElementInPage(selector) {
   if (prev) prev.remove();
 
   let el;
-  try { el = document.querySelector(selector); } catch (e) {}
+  try { el = document.querySelector(selector); } catch (e) { }
   if (!el) return;
 
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });

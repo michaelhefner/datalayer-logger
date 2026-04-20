@@ -8,7 +8,7 @@
 
 const { ipcRenderer } = require('electron');
 
-;(function () {
+(function () {
   const backingArray = [];
 
   // Safe serialiser – handles circular refs, DOM nodes, functions, etc.
@@ -82,7 +82,7 @@ const { ipcRenderer } = require('electron');
 // recording every listener registration keyed by target element.
 // Exposes window.__dlGetListeners__(el) so scanPageForClickables can read them.
 // ---------------------------------------------------------------------------
-;(function () {
+(function () {
   const listenerMap = new WeakMap();
   const _add = EventTarget.prototype.addEventListener;
 
@@ -90,10 +90,10 @@ const { ipcRenderer } = require('electron');
     if (this instanceof EventTarget) {
       const capture = typeof options === 'boolean' ? options
         : !!(options && options.capture);
-      const once    = !!(options && typeof options === 'object' && options.once);
+      const once = !!(options && typeof options === 'object' && options.once);
       const passive = !!(options && typeof options === 'object' && options.passive);
 
-      let fnName    = '(anonymous)';
+      let fnName = '(anonymous)';
       let fnPreview = '';
       if (typeof listener === 'function') {
         fnName = listener.name || '(anonymous)';

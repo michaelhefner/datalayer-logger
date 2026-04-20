@@ -1,22 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';" />
+    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';" />
   <title>DataLayer Logger</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
   <!-- ── Toolbar ── -->
   <header id="toolbar">
     <div id="nav-buttons">
-      <button id="back-btn"    title="Back (Alt+Left)">&#8592;</button>
+      <button id="back-btn" title="Back (Alt+Left)">&#8592;</button>
       <button id="forward-btn" title="Forward (Alt+Right)">&#8594;</button>
-      <button id="reload-btn"  title="Reload (F5)">&#8635;</button>
+      <button id="reload-btn" title="Reload (F5)">&#8635;</button>
     </div>
-    <input id="url-bar" type="text" spellcheck="false"
-           placeholder="Enter a URL or search term…" autocomplete="off" />
+    <input id="url-bar" type="text" spellcheck="false" placeholder="Enter a URL or search term…" autocomplete="off" />
     <button id="go-btn">Go</button>
   </header>
 
@@ -42,7 +43,7 @@
       <div id="sidebar-header">
         <div id="sidebar-actions">
           <button id="export-btn" title="Export all events to a JSON file">Export</button>
-          <button id="clear-btn"  title="Clear captured events and start a new session">Clear</button>
+          <button id="clear-btn" title="Clear captured events and start a new session">Clear</button>
         </div>
       </div>
 
@@ -101,16 +102,15 @@
             Capture
           </label>
           <button id="export-network-btn" title="Export network log as JSON">Export</button>
-          <button id="clear-network-btn"  title="Clear network log">Clear</button>
+          <button id="clear-network-btn" title="Clear network log">Clear</button>
         </div>
       </div>
 
       <!-- Domain / URL filters -->
       <div id="network-filters-section">
         <div id="network-filter-tags"></div>
-        <input id="network-filter-input" type="text"
-               placeholder="Add domain or URL filter and press Enter…"
-               autocomplete="off" spellcheck="false" />
+        <input id="network-filter-input" type="text" placeholder="Add domain or URL filter and press Enter…"
+          autocomplete="off" spellcheck="false" />
         <div id="network-filter-hint">No filters = capture all requests</div>
       </div>
 
@@ -131,4 +131,5 @@
 
   <script src="renderer.js"></script>
 </body>
+
 </html>

@@ -24,13 +24,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   exportListeners: (elements) => ipcRenderer.send('export-listeners', elements),
 
   // Network logging
-  getNetworkLog:      ()          => ipcRenderer.invoke('get-network-log'),
-  getNetworkFilters:  ()          => ipcRenderer.invoke('get-network-filters'),
-  clearNetworkLog:    ()          => ipcRenderer.send('clear-network-log'),
-  setNetworkFilters:  (filters)   => ipcRenderer.send('set-network-filters', filters),
-  setNetworkEnabled:  (enabled)   => ipcRenderer.send('set-network-enabled', enabled),
-  exportNetworkLog:   (filtered)  => ipcRenderer.send('export-network-log', filtered),
-  onNetworkEntry:     (cb)        => ipcRenderer.on('network-entry', (_e, entry) => cb(entry)),
+  getNetworkLog: () => ipcRenderer.invoke('get-network-log'),
+  getNetworkFilters: () => ipcRenderer.invoke('get-network-filters'),
+  clearNetworkLog: () => ipcRenderer.send('clear-network-log'),
+  setNetworkFilters: (filters) => ipcRenderer.send('set-network-filters', filters),
+  setNetworkEnabled: (enabled) => ipcRenderer.send('set-network-enabled', enabled),
+  exportNetworkLog: (filtered) => ipcRenderer.send('export-network-log', filtered),
+  onNetworkEntry: (cb) => ipcRenderer.on('network-entry', (_e, entry) => cb(entry)),
 
   // Subscriptions (one-way from main → renderer)
   onUrlChanged: (cb) =>

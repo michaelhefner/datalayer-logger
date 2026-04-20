@@ -1,29 +1,29 @@
 'use strict';
 
 // ── DOM refs ──────────────────────────────────────────────────────────────
-const urlBar      = document.getElementById('url-bar');
-const goBtn       = document.getElementById('go-btn');
-const backBtn     = document.getElementById('back-btn');
-const forwardBtn  = document.getElementById('forward-btn');
-const reloadBtn   = document.getElementById('reload-btn');
-const eventsList  = document.getElementById('events-list');
-const eventBadge  = document.getElementById('event-badge');
-const exportBtn   = document.getElementById('export-btn');
-const clearBtn    = document.getElementById('clear-btn');
+const urlBar = document.getElementById('url-bar');
+const goBtn = document.getElementById('go-btn');
+const backBtn = document.getElementById('back-btn');
+const forwardBtn = document.getElementById('forward-btn');
+const reloadBtn = document.getElementById('reload-btn');
+const eventsList = document.getElementById('events-list');
+const eventBadge = document.getElementById('event-badge');
+const exportBtn = document.getElementById('export-btn');
+const clearBtn = document.getElementById('clear-btn');
 const sessionPath = document.getElementById('session-path');
 const filterInput = document.getElementById('filter-input');
 
 // Clickable elements
-const elementBadge       = document.getElementById('element-badge');
-const scanBtn            = document.getElementById('scan-btn');
-const copyElementsBtn    = document.getElementById('copy-elements-btn');
-const logListenersBtn    = document.getElementById('log-listeners-btn');
-const elementsList       = document.getElementById('elements-list');
+const elementBadge = document.getElementById('element-badge');
+const scanBtn = document.getElementById('scan-btn');
+const copyElementsBtn = document.getElementById('copy-elements-btn');
+const logListenersBtn = document.getElementById('log-listeners-btn');
+const elementsList = document.getElementById('elements-list');
 const elementsEmptyState = document.getElementById('elements-empty-state');
 const elementFilterInput = document.getElementById('element-filter-input');
-const visibleOnlyCb      = document.getElementById('visible-only-cb');
-const autoScanCb         = document.getElementById('auto-scan-cb');
-const elementsCount      = document.getElementById('elements-count');
+const visibleOnlyCb = document.getElementById('visible-only-cb');
+const autoScanCb = document.getElementById('auto-scan-cb');
+const elementsCount = document.getElementById('elements-count');
 
 let totalCount = 0;
 
@@ -49,13 +49,13 @@ function highlightJson(raw) {
       if (keyWithColon) {
         // "key":  → colour the key part, keep the colon
         const colonIdx = keyWithColon.lastIndexOf(':');
-        const key   = keyWithColon.slice(0, colonIdx).trim();
+        const key = keyWithColon.slice(0, colonIdx).trim();
         const colon = keyWithColon.slice(colonIdx);
         return `<span class="jk">${key}</span>${colon}`;
       }
-      if (strVal)  return `<span class="js">${strVal}</span>`;
-      if (bool)    return `<span class="jb">${bool}</span>`;
-      if (nil)     return `<span class="jl">${nil}</span>`;
+      if (strVal) return `<span class="js">${strVal}</span>`;
+      if (bool) return `<span class="jb">${bool}</span>`;
+      if (nil) return `<span class="jl">${nil}</span>`;
       if (num !== undefined) return `<span class="jn">${num}</span>`;
       return _match;
     }
@@ -66,13 +66,13 @@ function highlightJson(raw) {
 function formatJs(src) {
   const INDENT = '  ';
   let depth = 0;
-  let out   = '';
-  let i     = 0;
+  let out = '';
+  let i = 0;
   const len = src.length;
 
-  const ind     = () => INDENT.repeat(Math.max(0, depth));
+  const ind = () => INDENT.repeat(Math.max(0, depth));
   const trimOut = () => { out = out.replace(/[ \t]+$/, ''); };
-  const skipWs  = () => { while (i < len && /[ \t\r\n]/.test(src[i])) i++; };
+  const skipWs = () => { while (i < len && /[ \t\r\n]/.test(src[i])) i++; };
 
   while (i < len) {
     const ch = src[i];
@@ -164,11 +164,11 @@ function formatJs(src) {
 
 // ── JS syntax highlighter ───────────────────────────────────────────────────
 const JS_KW = new Set([
-  'function','return','const','let','var','if','else','for','while','do',
-  'switch','case','break','continue','new','delete','void','typeof','instanceof',
-  'in','of','class','extends','super','import','export','default',
-  'try','catch','finally','throw','async','await','yield',
-  'null','undefined','true','false','this','arguments',
+  'function', 'return', 'const', 'let', 'var', 'if', 'else', 'for', 'while', 'do',
+  'switch', 'case', 'break', 'continue', 'new', 'delete', 'void', 'typeof', 'instanceof',
+  'in', 'of', 'class', 'extends', 'super', 'import', 'export', 'default',
+  'try', 'catch', 'finally', 'throw', 'async', 'await', 'yield',
+  'null', 'undefined', 'true', 'false', 'this', 'arguments',
 ]);
 
 function highlightJs(raw) {
@@ -221,14 +221,14 @@ function highlightJs(raw) {
   }
 
   return tokens.map(tok => {
-    if (tok.t === 'str')     return `<span class="js-str">${escapeHtml(tok.v)}</span>`;
+    if (tok.t === 'str') return `<span class="js-str">${escapeHtml(tok.v)}</span>`;
     if (tok.t === 'comment') return `<span class="js-comment">${escapeHtml(tok.v)}</span>`;
 
     // Highlight keywords, numbers, and function-call names within code segments
     const code = tok.v;
     const wordRe = /[a-zA-Z_$][a-zA-Z0-9_$]*/g;
-    const numRe  = /\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b/g;
-    const spans  = [];
+    const numRe = /\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b/g;
+    const spans = [];
     let m;
     wordRe.lastIndex = 0;
     while ((m = wordRe.exec(code)) !== null)
@@ -266,7 +266,7 @@ function getEventName(data) {
   // gtag-style arguments object: {"0":"event","1":"page_view",...}
   if (data['0'] === 'event' && data['1']) return `gtag: ${data['1']}`;
   if (data['0'] === 'config' && data['1']) return `gtag config: ${data['1']}`;
-  if (data['0'] === 'set')   return 'gtag set';
+  if (data['0'] === 'set') return 'gtag set';
   const keys = Object.keys(data);
   if (keys.length === 0) return '(empty push)';
   return keys.slice(0, 2).join(', ');
@@ -296,8 +296,8 @@ function addEventToList(entry, prepend = true) {
   updateEmptyState();
 
   const eventName = getEventName(entry.event);
-  const time      = new Date(entry.timestamp).toLocaleTimeString();
-  const jsonText  = JSON.stringify(entry.event, null, 2);
+  const time = new Date(entry.timestamp).toLocaleTimeString();
+  const jsonText = JSON.stringify(entry.event, null, 2);
   const highlighted = highlightJson(escapeHtml(jsonText));
 
   const item = document.createElement('div');
@@ -343,15 +343,15 @@ urlBar.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') urlBar.blur();
 });
 
-backBtn.addEventListener('click',    () => window.electronAPI.goBack());
+backBtn.addEventListener('click', () => window.electronAPI.goBack());
 forwardBtn.addEventListener('click', () => window.electronAPI.goForward());
-reloadBtn.addEventListener('click',  () => window.electronAPI.reload());
+reloadBtn.addEventListener('click', () => window.electronAPI.reload());
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'F5')                        { window.electronAPI.reload();    e.preventDefault(); }
-  if (e.key === 'ArrowLeft'  && e.altKey)    { window.electronAPI.goBack();    e.preventDefault(); }
-  if (e.key === 'ArrowRight' && e.altKey)    { window.electronAPI.goForward(); e.preventDefault(); }
-  if ((e.ctrlKey || e.metaKey) && e.key === 'l') { urlBar.select();            e.preventDefault(); }
+  if (e.key === 'F5') { window.electronAPI.reload(); e.preventDefault(); }
+  if (e.key === 'ArrowLeft' && e.altKey) { window.electronAPI.goBack(); e.preventDefault(); }
+  if (e.key === 'ArrowRight' && e.altKey) { window.electronAPI.goForward(); e.preventDefault(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'l') { urlBar.select(); e.preventDefault(); }
 });
 
 // ── Event log actions ─────────────────────────────────────────────────────
@@ -371,19 +371,19 @@ filterInput.addEventListener('input', applyFilter);
 // ── Sidebar resize handle ───────────────────────────────────────────────────
 
 const resizeHandle = document.getElementById('sidebar-resize-handle');
-const sidebar      = document.getElementById('sidebar');
+const sidebar = document.getElementById('sidebar');
 const MIN_W = 280;
 const MAX_W = window.innerWidth - 300;
 
 resizeHandle.addEventListener('mousedown', (startEvt) => {
   startEvt.preventDefault();
-  const startX     = startEvt.clientX;
+  const startX = startEvt.clientX;
   const startWidth = sidebar.getBoundingClientRect().width;
 
   document.body.classList.add('resizing');
 
   function onMouseMove(e) {
-    const delta    = startX - e.clientX;          // dragging left = wider
+    const delta = startX - e.clientX;          // dragging left = wider
     const newWidth = Math.min(MAX_W, Math.max(MIN_W, startWidth + delta));
     document.documentElement.style.setProperty('--sidebar-w', `${newWidth}px`);
     window.electronAPI.resizeSidebar(newWidth);
@@ -392,11 +392,11 @@ resizeHandle.addEventListener('mousedown', (startEvt) => {
   function onMouseUp() {
     document.body.classList.remove('resizing');
     document.removeEventListener('mousemove', onMouseMove);
-    document.removeEventListener('mouseup',   onMouseUp);
+    document.removeEventListener('mouseup', onMouseUp);
   }
 
   document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup',   onMouseUp);
+  document.addEventListener('mouseup', onMouseUp);
 });
 
 // ── Tab switching ─────────────────────────────────────────────────────────
@@ -415,33 +415,33 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
 let scannedElements = [];
 
 function tagClass(tag) {
-  if (tag === 'a')                          return 'el-tag-a';
+  if (tag === 'a') return 'el-tag-a';
   if (tag === 'button' || tag === 'summary') return 'el-tag-button';
   if (tag === 'input' || tag === 'textarea' || tag === 'select') return 'el-tag-input';
-  if (tag === 'select')                     return 'el-tag-select';
+  if (tag === 'select') return 'el-tag-select';
   return 'el-tag-other';
 }
 
 function elMeta(el) {
-  if (el.href)        return el.href;
-  if (el.role)        return `role=${el.role}`;
-  if (el.type)        return `type=${el.type}`;
-  if (el.name)        return `name=${el.name}`;
+  if (el.href) return el.href;
+  if (el.role) return `role=${el.role}`;
+  if (el.type) return `type=${el.type}`;
+  if (el.name) return `name=${el.name}`;
   if (el.placeholder) return el.placeholder;
-  if (el.ariaLabel)   return el.ariaLabel;
+  if (el.ariaLabel) return el.ariaLabel;
   return el.selector;
 }
 
 function renderElements() {
   const visOnly = visibleOnlyCb.checked;
-  const term    = elementFilterInput.value.trim().toLowerCase();
-  const pool    = visOnly ? scannedElements.filter(e => e.visible) : scannedElements;
+  const term = elementFilterInput.value.trim().toLowerCase();
+  const pool = visOnly ? scannedElements.filter(e => e.visible) : scannedElements;
 
   elementsList.innerHTML = '';
   let shown = 0;
 
   pool.forEach((el) => {
-    const meta     = elMeta(el);
+    const meta = elMeta(el);
     const haystack = `${el.tag} ${el.text} ${meta} ${el.selector}`.toLowerCase();
     if (term && !haystack.includes(term)) return;
 
@@ -458,8 +458,8 @@ function renderElements() {
         </div>
         <div class="el-right">
           ${el.listeners && el.listeners.length
-            ? `<span class="el-listener-badge" title="${el.listeners.length} event listener${el.listeners.length !== 1 ? 's' : ''}">${el.listeners.length} &#x1F4E1;</span>`
-            : ''}
+        ? `<span class="el-listener-badge" title="${el.listeners.length} event listener${el.listeners.length !== 1 ? 's' : ''}">${el.listeners.length} &#x1F4E1;</span>`
+        : ''}
           <button class="el-copy-btn" title="Copy CSS selector">Copy</button>
         </div>
       </div>
@@ -471,7 +471,7 @@ function renderElements() {
               <span class="el-event-type">${escapeHtml(l.type)}</span>
               <span class="el-fn-name">${escapeHtml(l.fnName)}</span>
               ${l.capture ? '<span class="el-flag">capture</span>' : ''}
-              ${l.once    ? '<span class="el-flag">once</span>'    : ''}
+              ${l.once ? '<span class="el-flag">once</span>' : ''}
               ${l.passive ? '<span class="el-flag">passive</span>' : ''}
               <button class="el-listener-copy" title="Copy listener source">Copy</button>
             </div>
@@ -506,7 +506,7 @@ function renderElements() {
 
     // Toggle listener section when the badge is clicked
     const listenerBadge = item.querySelector('.el-listener-badge');
-    const listenersDiv  = item.querySelector('.el-listeners');
+    const listenersDiv = item.querySelector('.el-listeners');
     if (listenerBadge && listenersDiv) {
       listenerBadge.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -566,19 +566,19 @@ copyElementsBtn.addEventListener('click', () => {
 
 logListenersBtn.addEventListener('click', () => {
   const visOnly = visibleOnlyCb.checked;
-  const pool    = visOnly ? scannedElements.filter(e => e.visible) : scannedElements;
+  const pool = visOnly ? scannedElements.filter(e => e.visible) : scannedElements;
   const withListeners = pool
     .filter(e => e.listeners && e.listeners.length > 0)
     .map(e => ({
       selector: e.selector,
-      tag:      e.tag,
-      text:     e.text,
-      href:     e.href,
-      id:       e.id,
-      classes:  e.classes,
-      role:     e.role,
-      visible:  e.visible,
-      rect:     e.rect,
+      tag: e.tag,
+      text: e.text,
+      href: e.href,
+      id: e.id,
+      classes: e.classes,
+      role: e.role,
+      visible: e.visible,
+      rect: e.rect,
       listeners: e.listeners,
     }));
   if (withListeners.length === 0) {
@@ -608,19 +608,19 @@ window.electronAPI.onSessionFileChanged((filePath) => {
 
 // ── Network panel ─────────────────────────────────────────────────────────
 
-const networkBadge       = document.getElementById('network-badge');
-const networkList        = document.getElementById('network-list');
-const networkEmptyState  = document.getElementById('network-empty-state');
-const networkEnabledCb   = document.getElementById('network-enabled-cb');
-const exportNetworkBtn   = document.getElementById('export-network-btn');
-const clearNetworkBtn    = document.getElementById('clear-network-btn');
+const networkBadge = document.getElementById('network-badge');
+const networkList = document.getElementById('network-list');
+const networkEmptyState = document.getElementById('network-empty-state');
+const networkEnabledCb = document.getElementById('network-enabled-cb');
+const exportNetworkBtn = document.getElementById('export-network-btn');
+const clearNetworkBtn = document.getElementById('clear-network-btn');
 const networkFilterInput = document.getElementById('network-filter-input');
-const networkFilterTags  = document.getElementById('network-filter-tags');
+const networkFilterTags = document.getElementById('network-filter-tags');
 const networkSearchInput = document.getElementById('network-search-input');
 
-let networkFilters  = [];
-let networkCount    = 0;
-let networkEntries  = [];
+let networkFilters = [];
+let networkCount = 0;
+let networkEntries = [];
 
 // ── Filter tag management ─────────────────────────────────────────────────
 
@@ -672,8 +672,8 @@ function statusClass(code) {
 
 function methodClass(method) {
   const m = (method || '').toUpperCase();
-  if (m === 'GET')    return 'net-method-get';
-  if (m === 'POST')   return 'net-method-post';
+  if (m === 'GET') return 'net-method-get';
+  if (m === 'POST') return 'net-method-post';
   if (m === 'PUT' || m === 'PATCH') return 'net-method-put';
   if (m === 'DELETE') return 'net-method-del';
   return 'net-method-other';
@@ -721,12 +721,12 @@ function addNetworkEntry(entry, prepend = true) {
   item.className = 'net-item';
   item.dataset.haystack = `${entry.method} ${entry.url} ${entry.statusCode || ''}`.toLowerCase();
 
-  const short   = shortUrl(entry.url);
-  const time    = new Date(entry.timestamp).toLocaleTimeString();
-  const dur     = entry.duration != null ? `${entry.duration}ms` : '—';
-  const status  = entry.error ? 'ERR' : (entry.statusCode || '—');
-  const sCls    = entry.error ? 'net-status-err' : statusClass(entry.statusCode);
-  const mCls    = methodClass(entry.method);
+  const short = shortUrl(entry.url);
+  const time = new Date(entry.timestamp).toLocaleTimeString();
+  const dur = entry.duration != null ? `${entry.duration}ms` : '—';
+  const status = entry.error ? 'ERR' : (entry.statusCode || '—');
+  const sCls = entry.error ? 'net-status-err' : statusClass(entry.statusCode);
+  const mCls = methodClass(entry.method);
 
   item.innerHTML = `
     <div class="net-row">
@@ -770,7 +770,7 @@ function addNetworkEntry(entry, prepend = true) {
   // Expand/collapse
   item.querySelector('.net-row').addEventListener('click', () => {
     const detail = item.querySelector('.net-detail');
-    const open   = detail.style.display !== 'none';
+    const open = detail.style.display !== 'none';
     detail.style.display = open ? 'none' : 'block';
     item.classList.toggle('net-expanded', !open);
   });
@@ -790,7 +790,7 @@ function addNetworkEntry(entry, prepend = true) {
   });
 
   if (prepend) networkList.insertBefore(item, networkList.firstChild);
-  else         networkList.appendChild(item);
+  else networkList.appendChild(item);
 
   applyNetworkSearch();
 }
@@ -804,7 +804,7 @@ networkEnabledCb.addEventListener('change', () => {
 clearNetworkBtn.addEventListener('click', () => {
   window.electronAPI.clearNetworkLog();
   networkList.innerHTML = '';
-  networkCount  = 0;
+  networkCount = 0;
   networkEntries = [];
   networkBadge.textContent = '0';
   updateNetworkEmptyState();
